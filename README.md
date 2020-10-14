@@ -7,13 +7,13 @@
 
 # Steps
 
-* Listen on port
-* hello world
+* [x] Listen on port
+* [x] hello world
 * config file mechanism
-* Accept form
-* parse form info
-* provide download feedback (necessary?)
-* done page
+* [x] Accept form
+* [x] parse form info
+* [x] provide download feedback (necessary?)
+* [x] done page
 
 # Implementation
 
