@@ -23,13 +23,26 @@ async fn display_download(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match query_map.get("url") {
         Some(url) => {
+
+            let value_map: HashMap<&str, String> = [
+                ("url", url.clone()),
+                ("download_url", CONFIG.download_url.clone()),
+                ].iter().cloned().collect();
+
             match handle_download(url) {
-                Ok(_) => Ok(warp::reply::html("Download successful")),
+                Ok(_) => {
+
+                    let document = TEMPLATE_ENGINE.render("finished.html", &value_map).unwrap();
+                    Ok(warp::reply::html(document))
+                },
                 Err(_) => {
-                    // TODO: how to satisfy the borrow checker???
-                    //     error_document = TEMPLATE_ENGINE.render("error.html", &{}).unwrap();
-                    //     Ok(warp::reply::html(error_document.as_str()))
-                    Ok(warp::reply::html("Error Downloading Video"))
+                    let error_value_map: HashMap<&str, String> = [
+                        ("error", format!("Error downloading url: {}", url)),
+                    ].iter().cloned().collect();
+
+                    let document = TEMPLATE_ENGINE.render("error.html", &error_value_map).unwrap();
+
+                    Ok(warp::reply::html(document))
                 }
             }
         }

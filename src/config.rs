@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub download_dir: String,
+    // URL to download folder to display after download is finished
+    pub download_url: String,
 }
 
 /// `Config` implements `Default`
@@ -11,6 +13,7 @@ impl ::std::default::Default for Config {
     fn default() -> Self {
         Self {
             download_dir: ".".to_string(),
+            download_url: ".".to_string(),
         }
     }
 }

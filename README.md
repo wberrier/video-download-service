@@ -14,8 +14,7 @@
 * [x] parse form info
 * [x] provide download feedback (necessary?)
 * [x] done page
-* [ ] template error messages
-  * [ ] how to appease the borrorw checker with lifetimes and handlebars??
+* [x] template error messages
 
 # Implementation
 
