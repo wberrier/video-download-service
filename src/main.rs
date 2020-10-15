@@ -1,11 +1,12 @@
 use anyhow::Result;
 use std::collections::HashMap;
-use warp::Filter;
 use std::process::Command;
+use warp::Filter;
 
 #[macro_use]
 extern crate anyhow;
 
+use video_download_service::config::*;
 use video_download_service::templates::*;
 
 async fn display_index() -> Result<impl warp::Reply, warp::Rejection> {
@@ -23,9 +24,7 @@ async fn display_download(
     match query_map.get("url") {
         Some(url) => {
             match handle_download(url) {
-                Ok(_) => {
-                    Ok(warp::reply::html("Download successful"))
-                },
+                Ok(_) => Ok(warp::reply::html("Download successful")),
                 Err(_) => {
                     // TODO: how to satisfy the borrow checker???
                     //     error_document = TEMPLATE_ENGINE.render("error.html", &{}).unwrap();
@@ -39,24 +38,27 @@ async fn display_download(
 }
 
 fn handle_download(url: &str) -> Result<()> {
-    println!("Downloading url: '{}'", url);
+    // Get download directory
+    // how to make sure we can change dir without affecting other clients?
+    let download_dir = &CONFIG.download_dir;
+
+    println!("Downloading url: '{}' to: '{}'", url, download_dir);
 
     match Command::new("sh")
         .arg("-c")
-        .arg(format!("youtube-dl {}", url))
-        .output() {
-            Ok(output) => {
-                if output.status.success() {
-                    println!("Output: {}", std::str::from_utf8(&output.stdout).unwrap());
-                    Ok(())
-                } else {
-                    Err(anyhow!("youtube-dl failed"))
-                }
-            },
-            Err(_) => {
-                Err(anyhow!("Error executing youtube-dl"))
+        .arg(format!("cd {}; youtube-dl {}", download_dir, url))
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                println!("Output: {}", std::str::from_utf8(&output.stdout).unwrap());
+                Ok(())
+            } else {
+                Err(anyhow!("youtube-dl failed"))
             }
         }
+        Err(_) => Err(anyhow!("Error executing youtube-dl")),
+    }
 }
 
 #[tokio::main]

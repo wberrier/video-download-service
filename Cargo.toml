@@ -12,3 +12,5 @@ warp = "0.2"
 lazy_static = "1.4"
 handlebars = "3.5"
 anyhow = "1.0"
+confy = "0.4"
+serde = { version = "1.0", features = ["derive"] }

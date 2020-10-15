@@ -9,11 +9,13 @@
 
 * [x] Listen on port
 * [x] hello world
-* config file mechanism
+* [x] config file mechanism
 * [x] Accept form
 * [x] parse form info
 * [x] provide download feedback (necessary?)
 * [x] done page
+* [ ] template error messages
+  * [ ] how to appease the borrorw checker with lifetimes and handlebars??
 
 # Implementation
 
