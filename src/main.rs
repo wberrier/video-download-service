@@ -24,23 +24,23 @@ async fn display_download(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match query_map.get("url") {
         Some(url) => {
-
-            let value_map: HashMap<&str, String> = [
-                ("url", url.clone()),
-                ].iter().cloned().collect();
+            let value_map: HashMap<&str, String> = [("url", url.clone())].iter().cloned().collect();
 
             match handle_download(url) {
                 Ok(_) => {
-
                     let document = TEMPLATE_ENGINE.render("finished.html", &value_map).unwrap();
                     Ok(warp::reply::html(document))
-                },
+                }
                 Err(_) => {
-                    let error_value_map: HashMap<&str, String> = [
-                        ("error", format!("Error downloading url: {}", url)),
-                    ].iter().cloned().collect();
+                    let error_value_map: HashMap<&str, String> =
+                        [("error", format!("Error downloading url: {}", url))]
+                            .iter()
+                            .cloned()
+                            .collect();
 
-                    let document = TEMPLATE_ENGINE.render("error.html", &error_value_map).unwrap();
+                    let document = TEMPLATE_ENGINE
+                        .render("error.html", &error_value_map)
+                        .unwrap();
 
                     Ok(warp::reply::html(document))
                 }
