@@ -15,6 +15,15 @@
 * [x] provide download feedback (necessary?)
 * [x] done page
 * [x] template error messages
+* [x] file browsing option (instead of download url to point to local
+      path)
+* [ ] systemd file
+* [ ] option for download audio only
+* [ ] download subdirectory based on ip
+  * https://docs.rs/warp/0.2.5/warp/filters/addr/fn.remote.html
+* [ ] log all requests under subdirectory
+  * [ ] find good logging crate
+* [ ] only keep "last n" for each ip
 
 # Implementation
 

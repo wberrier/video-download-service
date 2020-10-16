@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::collections::HashMap;
+use std::fs;
 use std::process::Command;
 use warp::Filter;
 
@@ -26,7 +27,6 @@ async fn display_download(
 
             let value_map: HashMap<&str, String> = [
                 ("url", url.clone()),
-                ("download_url", CONFIG.download_url.clone()),
                 ].iter().cloned().collect();
 
             match handle_download(url) {
@@ -74,6 +74,43 @@ fn handle_download(url: &str) -> Result<()> {
     }
 }
 
+fn dir_listing(directory: &str) -> Result<std::vec::Vec<String>> {
+    let mut results: std::vec::Vec<String> = std::vec::Vec::new();
+
+    // TODO: need to sort these by date
+    // vector insert with compare func?
+
+    for entry in fs::read_dir(directory)? {
+        if entry.is_ok() {
+            results.push(entry?.file_name().to_str().unwrap().to_string());
+        }
+    }
+
+    Ok(results)
+}
+
+async fn list_downloads() -> Result<impl warp::Reply, warp::Rejection> {
+    let mut html_list: String = String::new();
+
+    html_list.push_str("<ul>\n");
+
+    // TODO: huh?  How to iterate a Result<Vec> ?
+    for list in dir_listing(&CONFIG.download_dir) {
+        for file in list {
+            html_list
+                .push_str(format!("<li><a href=\"file/{}\">{}</a></li>\n", file, file).as_str());
+        }
+    }
+
+    html_list.push_str("</ul>\n");
+
+    let value_map: HashMap<&str, String> = [("filelist", html_list)].iter().cloned().collect();
+
+    let document = TEMPLATE_ENGINE.render("filelist.html", &value_map).unwrap();
+
+    Ok(warp::reply::html(document))
+}
+
 #[tokio::main]
 async fn main() {
     // GET / => 200 OK with index body
@@ -84,7 +121,19 @@ async fn main() {
         .and(warp::query::<HashMap<String, String>>())
         .and_then(display_download);
 
-    let routes = main_page.or(download_page);
+    println!("Download dir: {}", &CONFIG.download_dir);
+
+    let file_browser = warp::path("file").and(warp::fs::dir(&CONFIG.download_dir));
+
+    let file_listing = warp::get()
+        .and(warp::path("filelist"))
+        .and(warp::path::end())
+        .and_then(list_downloads);
+
+    let routes = main_page
+        .or(download_page)
+        .or(file_browser)
+        .or(file_listing);
 
     warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
 }

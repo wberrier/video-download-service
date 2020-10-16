@@ -3,7 +3,7 @@ lazy_static! {
     pub static ref TEMPLATE_ENGINE: handlebars::Handlebars<'static> = {
         let mut engine = handlebars::Handlebars::new();
 
-        let templates = ["index", "error", "finished"];
+        let templates = ["index", "error", "finished", "filelist"];
 
         for template in &templates {
             let base_dir = "./templates".to_string();
