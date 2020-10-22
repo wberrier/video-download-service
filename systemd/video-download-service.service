@@ -1,0 +1,16 @@
+[Unit]
+Description=Video Download Service
+After=squid.service
+
+[Service]
+User=squid
+Group=squid
+ExecStart=/usr/local/bin/video-download-service
+
+# Keep this service running
+# (Haven't seen this, but just in case)
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -17,7 +17,7 @@
 * [x] template error messages
 * [x] file browsing option (instead of download url to point to local
       path)
-* [ ] systemd file
+* [x] systemd file
 * [ ] option for download audio only
 * [ ] download subdirectory based on ip
   * https://docs.rs/warp/0.2.5/warp/filters/addr/fn.remote.html
