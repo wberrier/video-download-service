@@ -31,9 +31,10 @@ async fn display_download(
                     let document = TEMPLATE_ENGINE.render("finished.html", &value_map).unwrap();
                     Ok(warp::reply::html(document))
                 }
-                Err(_) => {
+                Err(error) => {
+                    println!("Error: {}", error);
                     let error_value_map: HashMap<&str, String> =
-                        [("error", format!("Error downloading url: {}", url))]
+                        [("error", format!("Error downloading url: {}: {}", url, error))]
                             .iter()
                             .cloned()
                             .collect();
@@ -63,11 +64,13 @@ fn handle_download(url: &str) -> Result<()> {
         .output()
     {
         Ok(output) => {
+            let output_string = std::str::from_utf8(&output.stdout).unwrap();
+            let error_string = std::str::from_utf8(&output.stderr).unwrap();
             if output.status.success() {
-                println!("Output: {}", std::str::from_utf8(&output.stdout).unwrap());
+                println!("Output: {}", output_string);
                 Ok(())
             } else {
-                Err(anyhow!("youtube-dl failed"))
+                Err(anyhow!("youtube-dl failed: {}: {}", output_string, error_string))
             }
         }
         Err(_) => Err(anyhow!("Error executing youtube-dl")),
