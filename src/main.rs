@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::process::Command;
 use warp::Filter;
+use urlencoding::encode;
 
 #[macro_use]
 extern crate anyhow;
@@ -100,8 +101,10 @@ async fn list_downloads() -> Result<impl warp::Reply, warp::Rejection> {
     // TODO: huh?  How to iterate a Result<Vec> ?
     for list in dir_listing(&CONFIG.download_dir) {
         for file in list {
+            // Url encode the filename
+            let encoded_file = encode(&file);
             html_list
-                .push_str(format!("<li><a href=\"file/{}\">{}</a></li>\n", file, file).as_str());
+                .push_str(format!("<li><a href=\"file/{}\">{}</a></li>\n", encoded_file, file).as_str());
         }
     }
 

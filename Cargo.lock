@@ -1394,6 +1394,7 @@ dependencies = [
  "lazy_static",
  "serde",
  "tokio",
+ "urlencoding",
  "warp",
 ]
 
