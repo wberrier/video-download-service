@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::collections::HashMap;
-use std::fs;
+use std::fs::{DirEntry, read_dir};
 use std::process::Command;
 use warp::Filter;
 use urlencoding::encode;
@@ -59,9 +59,10 @@ fn handle_download(url: &str) -> Result<()> {
 
     println!("Downloading url: '{}' to: '{}'", url, download_dir);
 
+    // no-mtime: Use the download time for the timestamp so the listing order is based on download time
     match Command::new("sh")
         .arg("-c")
-        .arg(format!("cd {}; youtube-dl {}", download_dir, url))
+        .arg(format!("cd {}; youtube-dl --no-mtime {}", download_dir, url))
         .output()
     {
         Ok(output) => {
@@ -78,17 +79,25 @@ fn handle_download(url: &str) -> Result<()> {
     }
 }
 
-fn dir_listing(directory: &str) -> Result<std::vec::Vec<String>> {
-    let mut results: std::vec::Vec<String> = std::vec::Vec::new();
+fn dir_listing(directory: &str) -> Result<std::vec::Vec<DirEntry>> {
+    let mut results: std::vec::Vec<DirEntry> = std::vec::Vec::new();
 
     // TODO: need to sort these by date
     // vector insert with compare func?
 
-    for entry in fs::read_dir(directory)? {
+    for entry in read_dir(directory)? {
         if entry.is_ok() {
-            results.push(entry?.file_name().to_str().unwrap().to_string());
+            results.push(entry?);
         }
     }
+
+    // Sort by date so the listing reflects download time
+    results.sort_by(|a, b| {
+        a.metadata().unwrap().modified().unwrap().cmp(
+            &b.metadata().unwrap().modified().unwrap())
+    });
+
+    results.reverse();
 
     Ok(results)
 }
@@ -100,9 +109,13 @@ async fn list_downloads() -> Result<impl warp::Reply, warp::Rejection> {
 
     // TODO: huh?  How to iterate a Result<Vec> ?
     for list in dir_listing(&CONFIG.download_dir) {
-        for file in list {
+        for entry in list {
+
+            let file = entry.file_name().to_str().unwrap().to_string();
+
             // Url encode the filename
             let encoded_file = encode(&file);
+
             html_list
                 .push_str(format!("<li><a href=\"file/{}\">{}</a></li>\n", encoded_file, file).as_str());
         }
