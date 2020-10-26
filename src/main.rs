@@ -59,10 +59,14 @@ fn handle_download(url: &str) -> Result<()> {
 
     println!("Downloading url: '{}' to: '{}'", url, download_dir);
 
+    let command = format!("cd {}; youtube-dl --no-mtime '{}'", download_dir, url);
+
+    println!("With command: {}", command);
+
     // no-mtime: Use the download time for the timestamp so the listing order is based on download time
     match Command::new("sh")
         .arg("-c")
-        .arg(format!("cd {}; youtube-dl --no-mtime {}", download_dir, url))
+        .arg(command)
         .output()
     {
         Ok(output) => {
@@ -70,6 +74,7 @@ fn handle_download(url: &str) -> Result<()> {
             let error_string = std::str::from_utf8(&output.stderr).unwrap();
             if output.status.success() {
                 println!("Output: {}", output_string);
+                println!("Error output: {}", error_string);
                 Ok(())
             } else {
                 Err(anyhow!("youtube-dl failed: {}: {}", output_string, error_string))
