@@ -1,6 +1,6 @@
 # Features
 
-* download video urls (via youtube-dl)
+* download video urls (via yt-dlp)
 * place videos in certain locations (read only), with ip/name subdirs
 * log of videos downloaded
 * only keep n videos per ip? (but store logs indefinitely)
@@ -25,6 +25,8 @@
   * [ ] find good logging crate
 * [ ] only keep "last n" for each ip
 * [ ] put cargo/git version into binary to display on webpage
+* [ ] allow specifying path to downloader program
+* [ ] include Dockerfile for easy deployment
 
 # Implementation
 

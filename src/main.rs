@@ -11,6 +11,8 @@ extern crate anyhow;
 use video_download_service::config::*;
 use video_download_service::templates::*;
 
+static DOWNLOAD_COMMAND: &'static str = "yt-dlp";
+
 async fn display_index() -> Result<impl warp::Reply, warp::Rejection> {
     let doc_res = TEMPLATE_ENGINE.render("index.html", &{});
 
@@ -59,7 +61,7 @@ fn handle_download(url: &str) -> Result<()> {
 
     println!("Downloading url: '{}' to: '{}'", url, download_dir);
 
-    let command = format!("cd {}; youtube-dl --no-mtime '{}'", download_dir, url);
+    let command = format!("cd {}; {} --no-mtime '{}'", download_dir, DOWNLOAD_COMMAND, url);
 
     println!("With command: {}", command);
 
@@ -77,10 +79,10 @@ fn handle_download(url: &str) -> Result<()> {
                 println!("Error output: {}", error_string);
                 Ok(())
             } else {
-                Err(anyhow!("youtube-dl failed: {}: {}", output_string, error_string))
+                Err(anyhow!("yt-dlp failed: {}: {}", output_string, error_string))
             }
         }
-        Err(_) => Err(anyhow!("Error executing youtube-dl")),
+        Err(_) => Err(anyhow!("Error executing yt-dlp")),
     }
 }
 
