@@ -76,8 +76,8 @@ async fn handle_download(url: &str) -> Result<()> {
     // no-mtime: Use the download time for the timestamp so the listing order is based on download time
     match Command::new("sh").arg("-c").arg(command).output().await {
         Ok(output) => {
-            let output_string = std::str::from_utf8(&output.stdout).unwrap();
-            let error_string = std::str::from_utf8(&output.stderr).unwrap();
+            let output_string = std::str::from_utf8(&output.stdout)?;
+            let error_string = std::str::from_utf8(&output.stderr)?;
             if output.status.success() {
                 println!("Output: {}", output_string);
                 println!("Error output: {}", error_string);
