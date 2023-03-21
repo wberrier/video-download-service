@@ -1,17 +1,20 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
-use std::fs::{DirEntry, read_dir};
-use std::process::Command;
-use warp::Filter;
+use std::time::SystemTime;
+use tokio::fs::read_dir;
+use tokio::process::Command;
 use urlencoding::encode;
-
-#[macro_use]
-extern crate anyhow;
+use warp::Filter;
 
 use video_download_service::config::*;
 use video_download_service::templates::*;
 
-static DOWNLOAD_COMMAND: &'static str = "yt-dlp";
+static DOWNLOAD_COMMAND: &str = "yt-dlp";
+
+struct FileInfo {
+    name: String,
+    timestamp: SystemTime,
+}
 
 async fn display_index() -> Result<impl warp::Reply, warp::Rejection> {
     let doc_res = TEMPLATE_ENGINE.render("index.html", &{});
@@ -29,18 +32,20 @@ async fn display_download(
         Some(url) => {
             let value_map: HashMap<&str, String> = [("url", url.clone())].iter().cloned().collect();
 
-            match handle_download(url) {
+            match handle_download(url).await {
                 Ok(_) => {
                     let document = TEMPLATE_ENGINE.render("finished.html", &value_map).unwrap();
                     Ok(warp::reply::html(document))
                 }
                 Err(error) => {
                     println!("Error: {}", error);
-                    let error_value_map: HashMap<&str, String> =
-                        [("error", format!("Error downloading url: {}: {}", url, error))]
-                            .iter()
-                            .cloned()
-                            .collect();
+                    let error_value_map: HashMap<&str, String> = [(
+                        "error",
+                        format!("Error downloading url: {}: {}", url, error),
+                    )]
+                    .iter()
+                    .cloned()
+                    .collect();
 
                     let document = TEMPLATE_ENGINE
                         .render("error.html", &error_value_map)
@@ -54,23 +59,22 @@ async fn display_download(
     }
 }
 
-fn handle_download(url: &str) -> Result<()> {
+async fn handle_download(url: &str) -> Result<()> {
     // Get download directory
     // how to make sure we can change dir without affecting other clients?
     let download_dir = &CONFIG.download_dir;
 
     println!("Downloading url: '{}' to: '{}'", url, download_dir);
 
-    let command = format!("cd {}; {} --no-mtime '{}'", download_dir, DOWNLOAD_COMMAND, url);
+    let command = format!(
+        "cd {}; {} --no-mtime '{}'",
+        download_dir, DOWNLOAD_COMMAND, url
+    );
 
     println!("With command: {}", command);
 
     // no-mtime: Use the download time for the timestamp so the listing order is based on download time
-    match Command::new("sh")
-        .arg("-c")
-        .arg(command)
-        .output()
-    {
+    match Command::new("sh").arg("-c").arg(command).output().await {
         Ok(output) => {
             let output_string = std::str::from_utf8(&output.stdout).unwrap();
             let error_string = std::str::from_utf8(&output.stderr).unwrap();
@@ -79,30 +83,33 @@ fn handle_download(url: &str) -> Result<()> {
                 println!("Error output: {}", error_string);
                 Ok(())
             } else {
-                Err(anyhow!("yt-dlp failed: {}: {}", output_string, error_string))
+                Err(anyhow!(
+                    "yt-dlp failed: {}: {}",
+                    output_string,
+                    error_string
+                ))
             }
         }
         Err(_) => Err(anyhow!("Error executing yt-dlp")),
     }
 }
 
-fn dir_listing(directory: &str) -> Result<std::vec::Vec<DirEntry>> {
-    let mut results: std::vec::Vec<DirEntry> = std::vec::Vec::new();
+async fn dir_listing(directory: &str) -> Result<std::vec::Vec<FileInfo>> {
+    let mut results: std::vec::Vec<FileInfo> = std::vec::Vec::new();
 
-    // TODO: need to sort these by date
     // vector insert with compare func?
 
-    for entry in read_dir(directory)? {
-        if entry.is_ok() {
-            results.push(entry?);
-        }
+    let mut dir = read_dir(directory).await?;
+
+    while let Some(entry) = dir.next_entry().await? {
+        results.push(FileInfo {
+            name: entry.file_name().to_str().unwrap().to_string(),
+            timestamp: entry.metadata().await?.modified()?,
+        });
     }
 
     // Sort by date so the listing reflects download time
-    results.sort_by(|a, b| {
-        a.metadata().unwrap().modified().unwrap().cmp(
-            &b.metadata().unwrap().modified().unwrap())
-    });
+    results.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
     results.reverse();
 
@@ -114,17 +121,18 @@ async fn list_downloads() -> Result<impl warp::Reply, warp::Rejection> {
 
     html_list.push_str("<ul>\n");
 
-    // TODO: huh?  How to iterate a Result<Vec> ?
-    for list in dir_listing(&CONFIG.download_dir) {
-        for entry in list {
-
-            let file = entry.file_name().to_str().unwrap().to_string();
-
+    if let Ok(list) = dir_listing(&CONFIG.download_dir).await {
+        for fileinfo in list {
             // Url encode the filename
-            let encoded_file = encode(&file);
+            let encoded_file = encode(&fileinfo.name);
 
-            html_list
-                .push_str(format!("<li><a href=\"file/{}\">{}</a></li>\n", encoded_file, file).as_str());
+            html_list.push_str(
+                format!(
+                    "<li><a href=\"file/{}\">{}</a></li>\n",
+                    encoded_file, fileinfo.name
+                )
+                .as_str(),
+            );
         }
     }
 

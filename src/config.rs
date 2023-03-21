@@ -1,6 +1,8 @@
 use confy;
 use serde::{Deserialize, Serialize};
 
+use once_cell::sync::Lazy;
+
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub download_dir: String,
@@ -15,18 +17,16 @@ impl ::std::default::Default for Config {
     }
 }
 
-lazy_static! {
-    pub static ref CONFIG: Config = {
-        let mut config = Config::default();
-        if let Ok(conf) = confy::load("video-download-service") {
-            println!("Successfully loaded config");
-            config = conf;
-        }
+pub static CONFIG: Lazy<Config> = Lazy::new(|| {
+    let mut config = Config::default();
+    if let Ok(conf) = confy::load("video-download-service", None) {
+        println!("Successfully loaded config");
+        config = conf;
+    }
 
-        if let Err(error) = confy::store("video-download-service", &config) {
-            eprintln!("Config error: {}", error);
-        }
+    if let Err(error) = confy::store("video-download-service", None, &config) {
+        eprintln!("Config error: {}", error);
+    }
 
-        config
-    };
-}
+    config
+});
