@@ -28,13 +28,3 @@
 * [ ] allow specifying path to downloader program
 * [ ] include Dockerfile for easy deployment
 
-# TODO
-
-* [ ] use axum instead of warp
-
-# Implementation
-
-Looked at some rust web frameworks.  I think I'll try warp.  It's
-tokio/hyper based.
-
-

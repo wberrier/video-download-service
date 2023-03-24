@@ -1,10 +1,12 @@
 use anyhow::{anyhow, Result};
+use axum::response::Html;
+use axum::{extract::Query, routing::get, Router};
 use std::collections::HashMap;
 use std::time::SystemTime;
 use tokio::fs::read_dir;
 use tokio::process::Command;
+use tower_http::services::ServeDir;
 use urlencoding::encode;
-use warp::Filter;
 
 use video_download_service::config::*;
 use video_download_service::templates::*;
@@ -16,27 +18,20 @@ struct FileInfo {
     timestamp: SystemTime,
 }
 
-async fn display_index() -> Result<impl warp::Reply, warp::Rejection> {
-    let doc_res = TEMPLATE_ENGINE.render("index.html", &{});
-
-    match doc_res {
-        Ok(document) => Ok(warp::reply::html(document)),
-        Err(_) => Err(warp::reject::not_found()),
-    }
+async fn display_index() -> Html<String> {
+    Html(match TEMPLATE_ENGINE.render("index.html", &{}) {
+        Ok(document) => document,
+        Err(error) => error.to_string(),
+    })
 }
 
-async fn display_download(
-    query_map: HashMap<String, String>,
-) -> Result<impl warp::Reply, warp::Rejection> {
-    match query_map.get("url") {
+async fn display_download(Query(params): Query<HashMap<String, String>>) -> Html<String> {
+    Html(match params.get("url") {
         Some(url) => {
             let value_map: HashMap<&str, String> = [("url", url.clone())].iter().cloned().collect();
 
             match handle_download(url).await {
-                Ok(_) => {
-                    let document = TEMPLATE_ENGINE.render("finished.html", &value_map).unwrap();
-                    Ok(warp::reply::html(document))
-                }
+                Ok(_) => TEMPLATE_ENGINE.render("finished.html", &value_map).unwrap(),
                 Err(error) => {
                     println!("Error: {}", error);
                     let error_value_map: HashMap<&str, String> = [(
@@ -47,16 +42,14 @@ async fn display_download(
                     .cloned()
                     .collect();
 
-                    let document = TEMPLATE_ENGINE
+                    TEMPLATE_ENGINE
                         .render("error.html", &error_value_map)
-                        .unwrap();
-
-                    Ok(warp::reply::html(document))
+                        .unwrap()
                 }
             }
         }
-        None => Err(warp::reject::not_found()),
-    }
+        None => "Not found".to_string(),
+    })
 }
 
 async fn handle_download(url: &str) -> Result<()> {
@@ -116,7 +109,7 @@ async fn dir_listing(directory: &str) -> Result<std::vec::Vec<FileInfo>> {
     Ok(results)
 }
 
-async fn list_downloads() -> Result<impl warp::Reply, warp::Rejection> {
+async fn list_downloads() -> Html<String> {
     let mut html_list: String = String::new();
 
     html_list.push_str("<ul>\n");
@@ -142,32 +135,22 @@ async fn list_downloads() -> Result<impl warp::Reply, warp::Rejection> {
 
     let document = TEMPLATE_ENGINE.render("filelist.html", &value_map).unwrap();
 
-    Ok(warp::reply::html(document))
+    Html(document)
 }
 
 #[tokio::main]
 async fn main() {
-    // GET / => 200 OK with index body
-    let main_page = warp::get().and(warp::path::end()).and_then(display_index);
-
-    let download_page = warp::get()
-        .and(warp::path("download"))
-        .and(warp::query::<HashMap<String, String>>())
-        .and_then(display_download);
-
     println!("Download dir: {}", &CONFIG.download_dir);
 
-    let file_browser = warp::path("file").and(warp::fs::dir(&CONFIG.download_dir));
+    let app = Router::new()
+        .route("/", get(display_index))
+        .route("/filelist", get(list_downloads))
+        .route("/download", get(display_download))
+        .nest_service("/file", ServeDir::new(&CONFIG.download_dir));
 
-    let file_listing = warp::get()
-        .and(warp::path("filelist"))
-        .and(warp::path::end())
-        .and_then(list_downloads);
-
-    let routes = main_page
-        .or(download_page)
-        .or(file_browser)
-        .or(file_listing);
-
-    warp::serve(routes).run(([0, 0, 0, 0], 8080)).await;
+    // run it with hyper on localhost:3000
+    axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
