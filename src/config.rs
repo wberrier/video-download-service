@@ -19,12 +19,12 @@ impl ::std::default::Default for Config {
 
 pub static CONFIG: Lazy<Config> = Lazy::new(|| {
     let mut config = Config::default();
-    if let Ok(conf) = confy::load("video-download-service", None) {
+    if let Ok(conf) = confy::load("video-download-service", "video-download-service") {
         println!("Successfully loaded config");
         config = conf;
     }
 
-    if let Err(error) = confy::store("video-download-service", None, &config) {
+    if let Err(error) = confy::store("video-download-service", "video-download-service", &config) {
         eprintln!("Config error: {}", error);
     }
 

@@ -14,6 +14,6 @@ tower-http = { version = "0", features = ["fs"] }
 once_cell = "1"
 handlebars = "4"
 anyhow = "1"
-confy = "0"
+confy = { version = "0", features = ["yaml_conf"], default-features = false }
 serde = { version = "1", features = ["derive"] }
 urlencoding = "2"
