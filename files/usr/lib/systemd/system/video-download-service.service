@@ -5,7 +5,7 @@ After=squid.service
 [Service]
 User=squid
 Group=squid
-ExecStart=/usr/local/bin/video-download-service
+ExecStart=/usr/bin/video-download-service
 
 # Keep this service running
 # (Haven't seen this, but just in case)

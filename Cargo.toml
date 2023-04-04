@@ -3,6 +3,8 @@ name = "video-download-service"
 version = "0.1.0"
 authors = ["Wade Berrier <wberrier@gmail.com>"]
 edition = "2018"
+license = "GPL"
+description = "Video dowloader service"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,3 +19,15 @@ anyhow = "1"
 confy = { version = "0", features = ["yaml_conf"], default-features = false }
 serde = { version = "1", features = ["derive"] }
 urlencoding = "2"
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/video-download-service", dest = "/usr/bin/video-download-service", mode = "755" },
+    { source = "files/usr/lib/systemd/system/video-download-service.service", dest = "/usr/lib/systemd/system/video-download-service.service", mode = "644" },
+]
+post_install_script = "if [ $1 -eq 1 ] && [ -x \"/usr/lib/systemd/systemd-update-helper\" ]; then /usr/lib/systemd/systemd-update-helper install-system-units video-download-service.service || : ; fi"
+pre_uninstall_script = "if [ $1 -eq 0 ] && [ -x \"/usr/lib/systemd/systemd-update-helper\" ]; then /usr/lib/systemd/systemd-update-helper remove-system-units video-download-service.service || : ; fi"
+post_uninstall_script = "if [ $1 -ge 1 ] && [ -x \"/usr/lib/systemd/systemd-update-helper\" ]; then /usr/lib/systemd/systemd-update-helper mark-restart-system-units video-download-service.service || : ; fi"
+
+[package.metadata.generate-rpm.requires]
+squid = "*"
