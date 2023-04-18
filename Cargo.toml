@@ -25,7 +25,7 @@ assets = [
     { source = "target/release/video-download-service", dest = "/usr/bin/video-download-service", mode = "755" },
     { source = "files/usr/lib/systemd/system/video-download-service.service", dest = "/usr/lib/systemd/system/video-download-service.service", mode = "644" },
 ]
-post_install_script = "if [ $1 -eq 1 ] ; then systemctl enable video-download-service.service >/dev/null 2>&1 || : ; fi"
+post_install_script = "if [ $1 -eq 1 ] ; then systemctl enable video-download-service.service >/dev/null 2>&1 || : ; systemctl start video-download-service.service >/dev/null 2>&1 || : ; fi"
 pre_uninstall_script = "if [ $1 -eq 0 ] ; then systemctl --no-reload disable video-download-service.service > /dev/null 2>&1 || : ; systemctl stop video-download-service.service > /dev/null 2>&1 || : ;  fi"
 post_uninstall_script = "systemctl daemon-reload >/dev/null 2>&1 || : ; if [ $1 -ge 1 ] ; then systemctl try-restart video-download-service.service >/dev/null 2>&1 || : ; fi"
 
