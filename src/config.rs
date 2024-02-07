@@ -12,7 +12,7 @@ pub struct Config {
 impl ::std::default::Default for Config {
     fn default() -> Self {
         Self {
-            download_dir: ".".to_string(),
+            download_dir: "/var/cache/vds/downloads".to_string(),
         }
     }
 }

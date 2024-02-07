@@ -26,5 +26,4 @@
 * [ ] only keep "last n" for each ip
 * [ ] put cargo/git version into binary to display on webpage
 * [ ] allow specifying path to downloader program
-* [ ] include Dockerfile for easy deployment
 

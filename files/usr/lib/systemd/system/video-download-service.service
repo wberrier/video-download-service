@@ -1,11 +1,10 @@
 [Unit]
 Description=Video Download Service
-After=squid.service
 
 [Service]
-User=squid
-Group=squid
-ExecStart=/usr/bin/video-download-service
+User=vds
+Group=vds
+ExecStart=/usr/local/bin/video-download-service
 
 # Keep this service running
 # (Haven't seen this, but just in case)
