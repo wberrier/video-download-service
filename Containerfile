@@ -9,6 +9,7 @@ RUN \
 	apt-get update \
 	&& apt-get install -y \
 	systemd systemd-sysv \
+	network-manager \
 	vim \
 	iputils-ping procps iproute2 \
 	&& apt-get clean \
