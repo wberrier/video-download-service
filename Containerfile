@@ -9,10 +9,11 @@ RUN \
 	apt-get update \
 	&& apt-get install -y \
 	systemd systemd-sysv \
-	network-manager \
+	udev \
 	vim \
 	iputils-ping procps iproute2 \
 	&& apt-get clean \
+	&& systemctl enable systemd-networkd \
 	&& systemctl mask getty@tty1.service \
 	&& systemctl mask systemd-logind
 
@@ -23,6 +24,10 @@ RUN \
 	cargo \
 	curl \
 	&& apt-get clean
+
+# Configure dhcp networking
+RUN \
+	echo "[Match]\nType=ether\n\n[Network]\nDHCP=yes" > "/etc/systemd/network/20-wired.network"
 
 # Install yt-dlp
 RUN \
