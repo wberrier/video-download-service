@@ -8,14 +8,13 @@ ARG VDS_HOME_DIR=/var/cache/vds
 RUN \
 	apt-get update \
 	&& apt-get install -y \
-	systemd systemd-sysv \
-	udev \
+	systemd systemd-sysv udev \
 	vim \
 	iputils-ping procps iproute2 \
 	&& apt-get clean \
 	&& systemctl enable systemd-networkd \
 	&& systemctl mask getty@tty1.service \
-	&& systemctl mask systemd-logind
+	&& echo "NAutoVTs=0" >> "/etc/systemd/logind.conf"
 
 # Install dependencies
 RUN \
