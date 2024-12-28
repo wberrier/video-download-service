@@ -22,6 +22,7 @@ RUN \
 	&& apt-get install -y \
 	cargo \
 	curl \
+	ffmpeg libavcodec-extra \
 	&& apt-get clean
 
 # Configure dhcp networking
