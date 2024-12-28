@@ -60,7 +60,7 @@ async fn handle_download(url: &str) -> Result<()> {
     println!("Downloading url: '{}' to: '{}'", url, download_dir);
 
     let command = format!(
-        "cd {}; {} --no-mtime '{}'",
+        "cd {}; {} --no-mtime --merge-output-format mp4 '{}'",
         download_dir, DOWNLOAD_COMMAND, url
     );
 
