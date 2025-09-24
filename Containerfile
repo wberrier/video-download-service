@@ -1,4 +1,4 @@
-FROM debian:12
+FROM debian:13
 
 ARG VDS_SRC=/usr/src/video-download-service
 ARG VDS_USER=vds
