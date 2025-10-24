@@ -21,8 +21,8 @@ RUN \
 	apt-get update \
 	&& apt-get install -y \
 	cargo \
-	curl \
 	ffmpeg libavcodec-extra \
+	pipx \
 	&& apt-get clean
 
 # Configure dhcp networking
@@ -31,9 +31,7 @@ RUN \
 
 # Install yt-dlp
 RUN \
-	mkdir -p /usr/local/bin \
-	&& curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-	&& chmod a+rx /usr/local/bin/yt-dlp
+	pipx install --global yt-dlp
 
 # Configure user
 RUN \
